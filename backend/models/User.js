@@ -6,11 +6,14 @@ const userSchema = new mongoose.Schema({
         minlength: 3,
         maxlength: 20,
         required: true,
-        unique: true
+        unique: true,
+        sparse: true,
     },
     email: {
         type: String,
-        required: true
+        required: true,
+        lowercase: true,
+        trim: true,
     },
     password: {
         type: String,
@@ -33,7 +36,7 @@ const userSchema = new mongoose.Schema({
       type: Boolean,
       default: false, // user starts unverified
     },
-    verificataionToken: {
+    verificationToken: {
         type: String // random string for verification link
     },
 },
@@ -41,4 +44,4 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 }
 );
-export default mongoose.model("User", userSchema);
+module.exports = mongoose.model("User", userSchema);

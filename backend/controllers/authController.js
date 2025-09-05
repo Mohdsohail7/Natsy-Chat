@@ -1,4 +1,6 @@
+import ChatSession from "../models/ChatSession";
 import GuestSession from "../models/GuestSession";
+import Message from "../models/Message";
 import User from "../models/User";
 
 const jwt = require("jsonwebtoken");
@@ -134,6 +136,28 @@ exports.registerUser = async (req, res) => {
         // If we used a guest session, consume it now (prevent further guest use)
         if (guestSessionId) {
             await GuestSession.findOneAndUpdate({ sessionId: guestSessionId }, { consumed: true });
+
+            // migrate chats + messages
+            await ChatSession.updateMany(
+                { "participants.refId": guestSessionId },
+                {
+                $set: {
+                    "participants.$[elem].refId": user._id.toString(),
+                    "participants.$[elem].role": "user",
+                },
+                },
+                { arrayFilters: [{ "elem.refId": guestSessionId }] }
+            );
+
+            await Message.updateMany(
+            { "sender.refId": guestSessionId },
+            {
+            $set: {
+                "sender.refId": user._id.toString(),
+                "sender.role": "user",
+            },
+            }
+          );
         }
 
         // Return verification link (later send email via nodemailer)

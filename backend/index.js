@@ -9,6 +9,12 @@ app.use(cors());
 app.use(express.json());
 
 
+// Routes
+const authRoutes = require("./routes/authRoutes");
+
+app.use("/api/v1/auth", authRoutes);
+
+
 // default route
 app.get("/", (req, res) => {
     return res.status(200).json({ message: "Natsy Chat is Running..."});

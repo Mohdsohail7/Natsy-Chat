@@ -65,29 +65,6 @@ exports.guestLogin = async (req, res) => {
   }
 }
 
-// guest logout
-exports.guestLogout = async (req, res) => {
-  try {
-    // Prefer sessionId in body; if token provided, decode it to get sessionId
-    let sessionId = req.body.sessionId;
-    if (!sessionId && req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
-      try {
-        const token = req.headers.authorization.split(" ")[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        if (decoded.role === "guest") sessionId = decoded.sessionId;
-      } catch (e) {}
-    }
-
-    if (!sessionId) return res.status(400).json({ message: "sessionId or token required to logout." });
-
-    await GuestSession.findOneAndUpdate({ sessionId }, { consumed: true });
-    return res.status(200).json({ message: "Guest logged out." });
-  } catch (error) {
-    console.error("Guest logout failed:", error);
-    return res.status(500).json({ message: "Guest logout failed." });
-  }
-};
-
 // Register user
 exports.registerUser = async (req, res) => {
     try {
@@ -147,7 +124,7 @@ exports.registerUser = async (req, res) => {
 
         const userData = {
             email: email.toLowerCase(),
-            password: hashed,
+            password: hashedPassword,
             verificationToken,
             isVerified: false,
         };
@@ -226,3 +203,26 @@ exports.loginUser = async (req, res) => {
         return res.status(500).json({ message: "Something went wrong. Please try again."});
     }
 }
+
+// logout (both)
+exports.logout = async (req, res) => {
+  try {
+    if (req.role === "guest" && req.guest?.sessionId) {
+      await GuestSession.updateOne(
+        { sessionId: req.guest.sessionId },
+        { consumed: true }
+      );
+      return res.json({ message: "Guest logged out successfully" });
+    }
+
+    if (req.role === "user") {
+      // Nothing to do, JWT is stateless → just let it expire
+      return res.json({ message: "User logged out successfully" });
+    }
+
+    return res.status(400).json({ message: "Invalid logout request" });
+  } catch (err) {
+    console.error("Logout error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

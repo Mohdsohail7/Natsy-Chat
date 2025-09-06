@@ -1,7 +1,7 @@
-import ChatSession from "../models/ChatSession";
-import GuestSession from "../models/GuestSession";
-import Message from "../models/Message";
-import User from "../models/User";
+const ChatSession = require("../models/ChatSession");
+const GuestSession = require("../models/GuestSession");
+const Message = require("../models/Message");
+const User = require("../models/User");
 
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");

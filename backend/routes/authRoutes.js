@@ -29,3 +29,5 @@ router.get("/verify/:token", authControllers.verifyEmail)
 //  LOGOUT (USER & GUEST)
 // ===============================
 router.post("/logout", authMiddleware, authControllers.logout);
+
+module.exports = router;

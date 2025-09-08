@@ -10,7 +10,7 @@ export default function Navbar() {
   return (
     <>
       {/* Top Navbar */}
-      <nav className="flex justify-between items-center px-6 py-4 bg-transparent text-white">
+      <nav className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-gradient-to-r from-blue-950 via-gray-900 to-slate-950 text-white border-b border-gray-900 shadow-md">
         {/* Left - Logo */}
         <h1 className="text-2xl font-bold">Natsy Chat</h1>
 
@@ -50,7 +50,7 @@ export default function Navbar() {
         }`}
       >
         {/* Close button only */}
-        <div className="flex justify-end px-6 py-4 border-b border-gray-700">
+        <div className="flex justify-end px-6 py-4 border-b border-gray-900">
           <button onClick={toggleSidebar}>
             <FiX size={24} />
           </button>

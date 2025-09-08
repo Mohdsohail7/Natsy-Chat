@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 export default function Main() {
   const [username, setUsername] = useState("");
@@ -34,7 +34,7 @@ export default function Main() {
       </p>
 
       {/* Username Input & Start Chat */}
-      <div className="flex flex-col md:flex-row items-center gap-4 mb-16 w-full max-w-md">
+      <div className="flex flex-col md:flex-row items-center gap-4 w-full max-w-md">
         <input
           type="text"
           placeholder="Enter username"
@@ -48,6 +48,18 @@ export default function Main() {
         >
           Start Chat
         </button>
+      </div>
+      {/* Auth Links */}
+      <div className="mt-4 mb-16 text-gray-300 text-sm">
+        <p>
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="text-indigo-400 hover:underline font-medium"
+          >
+            Login
+          </Link>
+        </p>
       </div>
 
       {/* Dummy Section */}

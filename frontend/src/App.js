@@ -6,6 +6,7 @@ import Spinner from './components/Spinner';
 import { Toaster } from 'react-hot-toast';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Chat from './pages/Chat';
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -60,7 +61,7 @@ function App() {
         {/* Other pages will come later */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/guest-chat" element={<div>Guest Chat Page</div>} />
+        <Route path="/chat" element={<Chat />} />
       </Routes>
     </Router>
   );

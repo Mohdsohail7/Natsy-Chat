@@ -3,13 +3,13 @@ import { FiArrowLeft } from "react-icons/fi";
 import MessageBubble from "./MessageBubble";
 
 export default function ChatScreen({
-  activeRoom,          // renamed from 'room'
-  setActiveRoom,       // to handle back button
-  chatHistories,       // object containing messages per room
-  setChatHistories,    // function to update messages
+  activeRoom, // renamed from 'room'
+  setActiveRoom, // to handle back button
+  chatHistories, // object containing messages per room
+  setChatHistories, // function to update messages
   input,
   setInput,
-  sendMessage,         // function from parent
+  sendMessage, // function from parent
 }) {
   const messages = chatHistories[activeRoom] || [];
 
@@ -37,10 +37,14 @@ export default function ChatScreen({
   };
 
   return (
-    <div className="flex-1 flex flex-col">
-      {/* Mobile header */}
-      <div className="md:hidden flex items-center bg-gray-900 border-b border-gray-800 px-4 py-3">
-        <button onClick={() => setActiveRoom(null)} className="mr-3">
+    <div className="flex-1 flex flex-col h-screen">
+      {/* Responsive header for both mobile & desktop */}
+      <div className="flex items-center bg-gray-900 border-b border-gray-800 px-4 py-3 sticky top-0 z-10">
+        {/* Back button visible on all screen sizes */}
+        <button
+          onClick={() => setActiveRoom(null)}
+          className="mr-3 p-1 rounded hover:bg-gray-800 transition"
+        >
           <FiArrowLeft size={20} />
         </button>
         <h2 className="text-lg font-semibold">{activeRoom}</h2>
@@ -57,33 +61,35 @@ export default function ChatScreen({
           />
         ))}
       </div>
-      
-      {/* Action buttons */}
-    <div className="px-4 py-2 bg-gray-900 border-t border-gray-800 flex items-center space-x-3">
-      <button
-        onClick={() => {
-          const newRoom = `Chat ${Object.keys(chatHistories).length + 1}`;
-          setChatHistories((prev) => ({ ...prev, [newRoom]: [] }));
-          setActiveRoom(newRoom);
-        }}
-        className="bg-indigo-500 hover:bg-indigo-400 px-5 py-2 rounded-full font-semibold"
-      >
-        New Chat
-      </button>
-      <button
-        onClick={() => {
-          setActiveRoom(null);
-        }}
-        className="bg-indigo-500 hover:bg-indigo-400 px-5 py-2 rounded-full font-semibold"
-      >
-        End Chat
-      </button>
-    </div>
+
+      {/* Action buttons only visible for "Random Room" */}
+      {activeRoom === "Random Room" && (
+        <div className="px-4 py-2 bg-gray-900 border-t border-gray-800 flex items-center space-x-3">
+          <button
+            onClick={() => {
+              const newRoom = `Chat ${Object.keys(chatHistories).length + 1}`;
+              setChatHistories((prev) => ({ ...prev, [newRoom]: [] }));
+              setActiveRoom(newRoom);
+            }}
+            className="bg-indigo-500 hover:bg-indigo-400 px-5 py-2 rounded-full font-semibold"
+          >
+            New Chat
+          </button>
+          <button
+            onClick={() => {
+              setActiveRoom(null);
+            }}
+            className="bg-indigo-500 hover:bg-indigo-400 px-5 py-2 rounded-full font-semibold"
+          >
+            End Chat
+          </button>
+        </div>
+      )}
 
       {/* Input box */}
       <form
         onSubmit={handleSendMessage}
-        className="p-4 bg-gray-900 flex items-center space-x-3 border-t border-gray-800"
+        className="p-4 bg-gray-900 flex items-center space-x-3 border-t border-gray-800 sticky bottom-0"
       >
         <input
           type="text"

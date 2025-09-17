@@ -2,9 +2,10 @@ import React from "react";
 
 export default function SidebarContent({ friends, activeRoom, setActiveRoom }) {
   return (
-    <div className="flex flex-col w-100 md:w-80 bg-gray-900 border-r border-gray-800 p-4 h-full">
+    <div className="flex flex-col w-full md:w-80 bg-gray-900 border-r border-gray-800 p-4 h-screen">
       <h2 className="text-xl font-semibold mb-4">Chats</h2>
-      <ul className="space-y-2">
+      <div className="flex-1 overflow-y-auto px-4">
+        <ul className="space-y-2">
         {/* Room */}
         <li
           onClick={() => setActiveRoom("Random Room")}
@@ -47,6 +48,7 @@ export default function SidebarContent({ friends, activeRoom, setActiveRoom }) {
           </ul>
         </li>
       </ul>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React from "react";
 import { FiArrowLeft } from "react-icons/fi";
 import MessageBubble from "./MessageBubble";
+import CallButtons from "./CallButtons";
 
 export default function ChatScreen({
   activeRoom, // renamed from 'room'
@@ -36,10 +37,18 @@ export default function ChatScreen({
     setInput("");
   };
 
+  const handleAudioCall = () => {
+    console.log("Audio call started with:", activeRoom);
+  };
+
+  const handleVideoCall = () => {
+    console.log("Video call started with:", activeRoom);
+  };
+
   return (
     <div className="flex-1 flex flex-col h-screen">
       {/* Responsive header for both mobile & desktop */}
-      <div className="flex items-center bg-gray-900 border-b border-gray-800 px-4 py-3 sticky top-0 z-10">
+      <div className="flex items-center bg-gray-900 border-b border-gray-800 px-4 py-3">
         {/* Back button visible on all screen sizes */}
         <button
           onClick={() => setActiveRoom(null)}
@@ -48,6 +57,11 @@ export default function ChatScreen({
           <FiArrowLeft size={20} />
         </button>
         <h2 className="text-lg font-semibold">{activeRoom}</h2>
+
+        {/* Call buttons */}
+        <div className="ml-auto">
+          <CallButtons onAudioCall={handleAudioCall} onVideoCall={handleVideoCall} />
+        </div>
       </div>
 
       {/* Messages */}

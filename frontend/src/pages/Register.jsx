@@ -4,19 +4,35 @@ import Footer from "../components/Footer";
 import Spinner from "../components/Spinner";
 import toast from "react-hot-toast";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function Register() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleRegister = (e) => {
+  const { register } = useAuth();
+  const navigate = useNavigate();
+
+  const handleRegister = async (e) => {
     e.preventDefault();
+    if (!email || !password) {
+      return toast.error("Email and password are required.");
+    }
+
     setLoading(true);
 
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await register({ email, password });
       toast.success("Account created successfully!");
-    }, 1500);
+      navigate("/chat");
+    } catch (error) {
+      toast.error(err.response?.data?.message || "Registration failed. Try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -33,12 +49,16 @@ export default function Register() {
           <input
             type="email"
             placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full mb-4 px-4 py-3 rounded-xl bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
           <div className="relative mb-6">
                       <input
                       type={showPassword? "text" : "password"}
                       placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       className="w-full mb-4 px-4 py-3 rounded-xl bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
                     />
                     <button
@@ -51,9 +71,10 @@ export default function Register() {
                     </div>
           <button
             type="submit"
+            disabled={loading}
             className="w-full py-3 bg-indigo-500 text-black rounded-xl font-semibold hover:bg-indigo-400 transition"
           >
-            Register
+            {loading ? "Creating Account..." : "Register"}
           </button>
         </form>
       </div>

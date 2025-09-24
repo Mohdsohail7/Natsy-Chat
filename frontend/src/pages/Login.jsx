@@ -4,19 +4,36 @@ import Footer from "../components/Footer";
 import Spinner from "../components/Spinner";
 import toast from "react-hot-toast";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = (e) => {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogin = async (e) => {
     e.preventDefault();
+    if (!username || !password) {
+      return toast.error("Username and password are required.");
+    }
+    
     setLoading(true);
 
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await login({ username, password }); // Calls backend via AuthContext
       toast.success("Login successful!");
-    }, 1500);
+      navigate("/chat");
+
+    } catch (error) {
+      toast.error(err.response?.data?.message || "Login failed. Try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -33,12 +50,16 @@ export default function Login() {
           <input
             type="text"
             placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             className="w-full mb-4 px-4 py-3 rounded-xl bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
           <div className="relative mb-6">
             <input
             type={showPassword? "text" : "password"}
             placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="w-full mb-4 px-4 py-3 rounded-xl bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
           <button
@@ -51,9 +72,10 @@ export default function Login() {
           </div>
           <button
             type="submit"
+            disabled={loading}
             className="w-full py-3 bg-indigo-500 text-black rounded-xl font-semibold hover:bg-indigo-400 transition"
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
       </div>

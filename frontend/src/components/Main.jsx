@@ -1,16 +1,33 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import toast from "react-hot-toast";
 
 export default function Main() {
   const [username, setUsername] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const { loginAsGuest } = useAuth();
   const navigate = useNavigate();
 
-  const handleStartChat = () => {
-    if (username.trim() !== "") {
-      navigate("/chat", { state: { username } });
-    } else {
-      alert("Please enter a username before starting chat.");
+  const handleStartChat = async () => {
+    e.preventDefault();
+    if (username.trim() === "") {
+      toast.error("Please enter a username before starting random chat.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await loginAsGuest({ username });
+      toast.success("guest login...");
+      navigate("/chat");
+    } catch (error) {
+      toast.error(err.response?.data?.message || "Guest login failed. Try again.");
+
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -41,12 +58,14 @@ export default function Main() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           className="flex-1 px-4 py-3 rounded-xl bg-gray-800 text-white placeholder-gray-400 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          disabled={loading}
         />
         <button
           onClick={handleStartChat}
+          disabled={loading}
           className="px-6 py-3 bg-indigo-500 text-white rounded-xl font-semibold hover:bg-indigo-400 transition"
         >
-          Start Chat
+          {loading ? "Starting..." : "Start Chat"}
         </button>
       </div>
       {/* Auth Links */}

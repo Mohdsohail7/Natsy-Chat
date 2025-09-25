@@ -28,7 +28,7 @@ export default function Register() {
       await register({ email, password });
       toast.success("Account created successfully!");
       navigate("/chat");
-    } catch (error) {
+    } catch (err) {
       toast.error(err.response?.data?.message || "Registration failed. Try again.");
     } finally {
       setLoading(false);

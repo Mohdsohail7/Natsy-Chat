@@ -11,7 +11,7 @@ export default function Main() {
   const { loginAsGuest } = useAuth();
   const navigate = useNavigate();
 
-  const handleStartChat = async () => {
+  const handleStartChat = async (e) => {
     e.preventDefault();
     if (username.trim() === "") {
       toast.error("Please enter a username before starting random chat.");
@@ -20,10 +20,10 @@ export default function Main() {
 
     try {
       setLoading(true);
-      await loginAsGuest({ username });
+      await loginAsGuest(username);
       toast.success("guest login...");
       navigate("/chat");
-    } catch (error) {
+    } catch (err) {
       toast.error(err.response?.data?.message || "Guest login failed. Try again.");
 
     } finally {

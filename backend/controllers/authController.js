@@ -22,6 +22,7 @@ const signGuestToken = (sessionId, username) => {
 exports.guestLogin = async (req, res) => {
     try {
         const { username } = req.body;
+        console.log("Guest login request body:", req.body);
         if (!username || username.trim().length < 3) {
             return res.status(400).json({ message: "Username must be at least 3 characters." });
         }

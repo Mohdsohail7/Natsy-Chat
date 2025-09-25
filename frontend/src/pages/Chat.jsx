@@ -1,161 +1,103 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import SidebarContent from "../components/chat/SidebarContent";
 import ChatScreen from "../components/chat/ChatScreen";
+import socket from "../api/socket";
 
 export default function Chat() {
   const [activeRoom, setActiveRoom] = useState(null);
-
-  // Messages per room/friend
-  const [chatHistories, setChatHistories] = useState({
-    "Random Room": [
-      { id: 1, sender: "other", name: "Alice", text: "Hey there" },
-      { id: 2, sender: "me", name: "Me", text: "Hi! How are you?" },
-      { id: 3, sender: "other", name: "Alice", text: "I’m good, thanks!" },
-      { id: 4, sender: "me", name: "Me", text: "What are you up to today?" },
-      { id: 5, sender: "other", name: "Alice", text: "Just working on some code. It's a fun project!" },
-      { id: 6, sender: "me", name: "Me", text: "That sounds cool. Anything interesting?" },
-      { id: 7, sender: "other", name: "Alice", text: "Just trying to get a scrolling div to work properly. It's a bit tricky." },
-      { id: 8, sender: "me", name: "Me", text: "Haha, I know the feeling. Tailwind can be a bit weird sometimes." },
-      { id: 9, sender: "other", name: "Alice", text: "Definitely. So, what about you?" },
-      { id: 10, sender: "me", name: "Me", text: "Oh, just enjoying the weekend. Taking a break." },
-      { id: 11, sender: "other", name: "Alice", text: "Sounds relaxing. Wish I could do that." },
-      { id: 12, sender: "me", name: "Me", text: "You'll get there soon. Don't worry about it." },
-      { id: 13, sender: "other", name: "Alice", text: "Yeah, I hope so too." },
-      { id: 14, sender: "me", name: "Me", text: "Hey, do you wanna grab some coffee later?" },
-      { id: 15, sender: "other", name: "Alice", text: "Sure, that sounds great. Where should we meet?" },
-      { id: 16, sender: "me", name: "Me", text: "How about that new place downtown?" },
-      { id: 17, sender: "other", name: "Alice", text: "Sounds good. See you then!" },
-      { id: 18, sender: "me", name: "Me", text: "See ya!" },
-      { id: 19, sender: "other", name: "Alice", text: "By the way, did you see the new movie?" },
-      { id: 20, sender: "me", name: "Me", text: "Which one?" },
-      { id: 21, sender: "other", name: "Alice", text: "The sci-fi thriller that just came out." },
-      { id: 22, sender: "me", name: "Me", text: "Oh yeah, I heard it was good. Was it?" },
-      { id: 23, sender: "other", name: "Alice", text: "It was awesome! Highly recommend it." },
-      { id: 24, sender: "me", name: "Me", text: "Cool, I'll check it out." },
-      { id: 25, sender: "other", name: "Alice", text: "Hey, I'm almost done with my work. What time should we meet?" },
-      { id: 26, sender: "me", name: "Me", text: "How about 4 PM?" },
-      { id: 27, sender: "other", name: "Alice", text: "Perfect. See you at the coffee shop." },
-    ],
-    Alice: [{ id: 1, sender: "other", name: "Alice", text: "Hi! Long time" }],
-    Bob: [{ id: 1, sender: "other", name: "Bob", text: "Yo, what’s up?" }],
-    Charlie: [
-      { id: 1, sender: "other", name: "Charlie", text: "Ready for the game?" },
-    ],
-    Diana: [{ id: 1, sender: "other", name: "Diana", text: "Hey" }],
-  });
-
+  const [chatHistories, setChatHistories] = useState({});
   const [input, setInput] = useState("");
+  const [chatId, setChatId] = useState(null);
+  const [hasRandomChat, setHasRandomChat] = useState(localStorage.getItem("role") === "guest");
+  const [isWaiting, setIsWaiting] = useState(false);
 
-  // Friends list with avatars
-  const friends = [
-    {
-      id: 1,
-      name: "Alice",
-      status: "online",
-      avatar: "https://i.pravatar.cc/40?img=1",
-    },
-    {
-      id: 2,
-      name: "Bob",
-      status: "offline",
-      avatar: "https://i.pravatar.cc/40?img=2",
-    },
-    {
-      id: 3,
-      name: "Charlie",
-      status: "online",
-      avatar: "https://i.pravatar.cc/40?img=3",
-    },
-    {
-      id: 4,
-      name: "Diana",
-      status: "offline",
-      avatar: "https://i.pravatar.cc/40?img=4",
-    },
-    {
-      id: 5,
-      name: "Frank",
-      status: "online",
-      avatar: "https://i.pravatar.cc/40?img=5",
-    },
-    {
-      id: 6,
-      name: "Grace",
-      status: "online",
-      avatar: "https://i.pravatar.cc/40?img=6",
-    },
-    {
-      id: 7,
-      name: "Heidi",
-      status: "offline",
-      avatar: "https://i.pravatar.cc/40?img=7",
-    },
-    {
-      id: 8,
-      name: "Ivan",
-      status: "online",
-      avatar: "https://i.pravatar.cc/40?img=8",
-    },
-    {
-      id: 9,
-      name: "Judy",
-      status: "online",
-      avatar: "https://i.pravatar.cc/40?img=9",
-    },
-    {
-      id: 10,
-      name: "Karl",
-      status: "offline",
-      avatar: "https://i.pravatar.cc/40?img=10",
-    },
-    {
-      id: 11,
-      name: "Laura",
-      status: "online",
-      avatar: "https://i.pravatar.cc/40?img=11",
-    },
-    {
-      id: 12,
-      name: "Mike",
-      status: "online",
-      avatar: "https://i.pravatar.cc/40?img=12",
-    },
-    {
-      id: 13,
-      name: "Nora",
-      status: "online",
-      avatar: "https://i.pravatar.cc/40?img=13",
-    },
-    {
-      id: 14,
-      name: "Oliver",
-      status: "offline",
-      avatar: "https://i.pravatar.cc/40?img=14",
-    },
-    {
-      id: 15,
-      name: "Pam",
-      status: "online",
-      avatar: "https://i.pravatar.cc/40?img=15",
-    },
-  ];
+  // Example friends list (can be fetched from API later)
+  const [friends] = useState([
+    { id: 1, name: "Alice", status: "online", avatar: "https://i.pravatar.cc/40?img=1" },
+    { id: 2, name: "Bob", status: "offline", avatar: "https://i.pravatar.cc/40?img=2" },
+    { id: 3, name: "Charlie", status: "online", avatar: "https://i.pravatar.cc/40?img=3" },
+  ]);
 
   const myAvatar = "https://i.pravatar.cc/40?img=5";
 
+  // ==== Socket Listeners ===
+  useEffect(() => {
+    socket.on("chatStarted", ({ chatId }) => {
+      console.log("Chat started with ID:", chatId);
+      setChatId(chatId);
+      setActiveRoom("Random Room");
+      setHasRandomChat(true);
+      setIsWaiting(false);
+    });
+
+    socket.on("waiting", ({ chatId }) => {
+      console.log("Waiting for match... session:", chatId);
+      setChatId(chatId);
+      setActiveRoom("Random Room");
+      setHasRandomChat(true);
+      setIsWaiting(true);
+    });
+
+    socket.on("newMessage", (msg) => {
+      console.log("Received message:", msg);
+      setChatHistories((prev) => ({
+        ...prev,
+        [activeRoom]: [...(prev[activeRoom] || []), {
+          id: msg._id,
+          sender: msg.sender,
+          text: msg.content,
+          timestamp: new Date(msg.createdAt).toLocaleTimeString([], {
+            hour: "2-digit", minute: "2-digit"
+          })
+        }]
+      }))
+    });
+
+    socket.on("chatEnded", ({ chatId }) => {
+      console.log("Chat ended:", chatId);
+      setActiveRoom(null);
+      setChatId(null);
+      setIsWaiting(false);
+    });
+
+    return () => {
+      socket.off("chatStarted");
+      socket.off("waiting");
+      socket.off("newMessage");
+      socket.off("chatEnded");
+    };
+
+  }, [activeRoom]);
+
+  // ==== start random chat ====
+  const startRandomChat = async (userId) => {
+    const username = localStorage.getItem("username");
+    if (!username) return;
+    socket.emit("randomChat", { userId: username });
+    setHasRandomChat(true);
+  };
+
+  // === send message ===
   const sendMessage = (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || !chatId) return;
 
-    const newMessage = {
-      id: Date.now(),
-      sender: "me",
-      name: "Me",
-      text: input,
-    };
+    socket.emit("sendMessage", {
+      chatId,
+      sender: "guest",
+      content: input,
+    });
 
     setChatHistories((prev) => ({
       ...prev,
-      [activeRoom]: [...(prev[activeRoom] || []), newMessage],
+      [activeRoom]: [...(prev[activeRoom] || []), {
+        id: Date.now(),
+        sender: "me",
+        text: input,
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit", minute: '2-digit'
+        })
+      }]
     }));
 
     setInput("");
@@ -170,6 +112,8 @@ export default function Chat() {
             friends={friends}
             activeRoom={activeRoom}
             setActiveRoom={setActiveRoom}
+            hasRandomChat={hasRandomChat}
+            startRandomChat={startRandomChat}
           />
         </aside>
 
@@ -180,15 +124,16 @@ export default function Chat() {
               setActiveRoom={setActiveRoom}
               chatHistories={chatHistories}
               setChatHistories={setChatHistories}
-              friends={friends}
               myAvatar={myAvatar}
               input={input}
               setInput={setInput}
               sendMessage={sendMessage}
+              startRandomChat={startRandomChat} // optional if needed inside ChatScreen
+              isWaiting={isWaiting}
             />
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-400">
-              Select a chat
+              Select a chat or Start Random Chat
             </div>
           )}
         </div>
@@ -201,6 +146,8 @@ export default function Chat() {
                 friends={friends}
                 activeRoom={activeRoom}
                 setActiveRoom={setActiveRoom}
+                hasRandomChat={hasRandomChat}
+                startRandomChat={startRandomChat}
               />
             </div>
           ) : (
@@ -209,11 +156,12 @@ export default function Chat() {
               setActiveRoom={setActiveRoom}
               chatHistories={chatHistories}
               setChatHistories={setChatHistories}
-              friends={friends}
               myAvatar={myAvatar}
               input={input}
               setInput={setInput}
               sendMessage={sendMessage}
+              startRandomChat={startRandomChat} // optional if needed inside ChatScreen
+              isWaiting={isWaiting}
             />
           )}
         </div>

@@ -29,7 +29,7 @@ export default function Login() {
       toast.success("Login successful!");
       navigate("/chat");
 
-    } catch (error) {
+    } catch (err) {
       toast.error(err.response?.data?.message || "Login failed. Try again.");
     } finally {
       setLoading(false);

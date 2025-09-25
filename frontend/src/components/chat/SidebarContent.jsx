@@ -1,14 +1,20 @@
 import React from "react";
 
-export default function SidebarContent({ friends, activeRoom, setActiveRoom }) {
+export default function SidebarContent({ friends = [], activeRoom, setActiveRoom, hasRandomChat, startRandomChat }) {
   return (
     <div className="flex flex-col w-full md:w-80 bg-gray-900 border-r border-gray-800 p-4 h-screen">
       <h2 className="text-xl font-semibold mb-4">Chats</h2>
       <div className="flex-1 overflow-y-auto px-4">
         <ul className="space-y-2">
-        {/* Room */}
-        <li
-          onClick={() => setActiveRoom("Random Room")}
+        {/* Random Chat */}
+        { hasRandomChat && (
+          <li
+          onClick={() => {
+            setActiveRoom("Random Room");
+            if (!activeRoom || activeRoom !== "Random Room") {
+                  startRandomChat();
+                }
+          }}
           className={`p-2 rounded-lg cursor-pointer ${
             activeRoom === "Random Room" ? "bg-gray-800" : "hover:bg-gray-700"
           }`}
@@ -16,11 +22,15 @@ export default function SidebarContent({ friends, activeRoom, setActiveRoom }) {
           Random Room
         </li>
 
+        )}
+        
+
         {/* Friends */}
         <li>
           <h3 className="text-gray-400 text-sm mt-4 mb-2 uppercase">Friends</h3>
           <ul className="space-y-2">
-            {friends.map((friend) => (
+            {
+              friends.map((friend) => (
               <li
                 key={friend.id}
                 onClick={() => setActiveRoom(friend.name)}
@@ -44,7 +54,9 @@ export default function SidebarContent({ friends, activeRoom, setActiveRoom }) {
                   }`}
                 ></span>
               </li>
-            ))}
+            ))
+            }
+            
           </ul>
         </li>
       </ul>

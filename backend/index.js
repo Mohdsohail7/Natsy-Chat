@@ -9,13 +9,23 @@ require("dotenv").config();
 
 const app = express();
 const server = http.createServer(app);
+
+// Socket.IO setup with CORS for frontend
 const io = new Server(server, {
-    cors: { origin: "*" },
+    cors: { 
+        origin: process.env.FRONTEND_URL || "http://localhost:3000",
+        credentials: true
+     },
 });
 
 // attach io to app for controller usage
 app.set("io",io);
-// app.use(cors());
+
+// Enable CORS for HTTP requests from frontend
+app.use(cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true
+}));
 
 // middleware
 app.use(express.json());
@@ -41,7 +51,7 @@ app.get("/", (req, res) => {
 // servr listen on port 4000 with database connection 
 const port = process.env.PORT || 4000;
 connectDB().then(() => {
-    app.listen(port, () => {
+    server.listen(port, () => {
         console.log(`Server is Running at port: ${port}`);
     })
 })

@@ -11,6 +11,8 @@ export default function ChatScreen({
   input,
   setInput,
   sendMessage, // function from parent
+  isWaiting,
+  startRandomChat
 }) {
   const messages = chatHistories[activeRoom] || [];
 
@@ -66,14 +68,21 @@ export default function ChatScreen({
 
       {/* Messages */}
       <div className="flex-1 p-4 overflow-y-auto space-y-3">
-        {messages.map((msg) => (
-          <MessageBubble
-            key={msg.id}
-            sender={msg.sender}
-            text={msg.text}
-            timestamp={msg.timestamp || "00:00"}
-          />
-        ))}
+        {isWaiting ? (
+    <div className="text-gray-400 text-center mt-10">
+      Waiting for a random match...
+    </div>
+  ) : (
+    messages.map((msg) => (
+      <MessageBubble
+        key={msg.id}
+        sender={msg.sender}
+        text={msg.text}
+        timestamp={msg.timestamp || "00:00"}
+      />
+    ))
+  )}
+
       </div>
 
       {/* Action buttons only visible for "Random Room" */}
@@ -81,9 +90,9 @@ export default function ChatScreen({
         <div className="px-4 py-2 bg-gray-900 border-t border-gray-800 flex items-center space-x-3">
           <button
             onClick={() => {
-              const newRoom = `Chat ${Object.keys(chatHistories).length + 1}`;
-              setChatHistories((prev) => ({ ...prev, [newRoom]: [] }));
-              setActiveRoom(newRoom);
+              startRandomChat();
+              setChatHistories((prev) => ({ ...prev, "Random Room": [] }));
+              setActiveRoom("Random Room");
             }}
             className="bg-indigo-500 hover:bg-indigo-400 px-5 py-2 rounded-full font-semibold"
           >

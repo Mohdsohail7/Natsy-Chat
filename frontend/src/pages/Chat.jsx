@@ -8,15 +8,32 @@ export default function Chat() {
   const [chatHistories, setChatHistories] = useState({});
   const [input, setInput] = useState("");
   const [chatId, setChatId] = useState(null);
-  const [hasRandomChat, setHasRandomChat] = useState(localStorage.getItem("role") === "guest");
+  const [hasRandomChat, setHasRandomChat] = useState(
+    localStorage.getItem("role") === "guest"
+  );
   const [isWaiting, setIsWaiting] = useState(false);
 
   // Example friends list (can be fetched from API later)
-  const [friends] = useState([
-    { id: 1, name: "Alice", status: "online", avatar: "https://i.pravatar.cc/40?img=1" },
-    { id: 2, name: "Bob", status: "offline", avatar: "https://i.pravatar.cc/40?img=2" },
-    { id: 3, name: "Charlie", status: "online", avatar: "https://i.pravatar.cc/40?img=3" },
-  ]);
+  // const [friends] = useState([
+  //   {
+  //     id: 1,
+  //     name: "Alice",
+  //     status: "online",
+  //     avatar: "https://i.pravatar.cc/40?img=1",
+  //   },
+  //   {
+  //     id: 2,
+  //     name: "Bob",
+  //     status: "offline",
+  //     avatar: "https://i.pravatar.cc/40?img=2",
+  //   },
+  //   {
+  //     id: 3,
+  //     name: "Charlie",
+  //     status: "online",
+  //     avatar: "https://i.pravatar.cc/40?img=3",
+  //   },
+  // ]);
 
   const myAvatar = "https://i.pravatar.cc/40?img=5";
 
@@ -24,38 +41,97 @@ export default function Chat() {
   useEffect(() => {
     socket.on("chatStarted", ({ chatId }) => {
       console.log("Chat started with ID:", chatId);
+
+      localStorage.setItem("chatId", chatId);
+
       setChatId(chatId);
       setActiveRoom("Random Room");
       setHasRandomChat(true);
       setIsWaiting(false);
+
+      // clear old messages
+      setChatHistories({});
     });
 
-    socket.on("waiting", ({ chatId }) => {
-      console.log("Waiting for match... session:", chatId);
-      setChatId(chatId);
+    socket.on("waiting", () => {
+      console.log("Waiting for match...");
+      setChatId(null);
       setActiveRoom("Random Room");
       setHasRandomChat(true);
       setIsWaiting(true);
+
+      // clear old messages
+      setChatHistories({});
+    });
+
+    socket.on("systemMessage", (msg) => {
+      console.log("System message:", msg);
+      setChatHistories((prev) => ({
+        ...prev,
+        "Random Room": [
+          ...(prev["Random Room"] || []),
+          { id: Date.now(), text: msg.text, isSystem: true },
+        ],
+      }));
     });
 
     socket.on("newMessage", (msg) => {
       console.log("Received message:", msg);
+
+      const myRefId = localStorage.getItem("refId");
+      const myRole = localStorage.getItem("role") || "guest";
+      // const myUsername = localStorage.getItem("username");
+
+      const isMe = msg.sender.refId === myRefId;
+      const targetRoom = "Random Room";
+
+      let senderDisplay;
+
+      if (msg.sender.role === "system") {
+        senderDisplay = "system";
+      } else if (isMe) {
+        // For my own messages
+        if (myRole === "guest" || msg.sender.role === "guest") {
+          senderDisplay = "me"; // styling ke liye "me"
+        } else {
+          senderDisplay = "me"; // still "me" for alignment
+        }
+      } else {
+        // For other user's messages
+        if (myRole === "guest" || msg.sender.role === "guest") {
+          senderDisplay = "anonymous";
+        } else {
+          senderDisplay = msg.sender.username || "Anonymous";
+        }
+      }
+
       setChatHistories((prev) => ({
         ...prev,
-        [activeRoom]: [...(prev[activeRoom] || []), {
-          id: msg._id,
-          sender: msg.sender,
-          text: msg.content,
-          timestamp: new Date(msg.createdAt).toLocaleTimeString([], {
-            hour: "2-digit", minute: "2-digit"
-          })
-        }]
-      }))
+        [targetRoom]: [
+          ...(prev[targetRoom] || []),
+          {
+            id: msg._id || Date.now(),
+            sender: senderDisplay,
+            text: msg.content,
+            timestamp: new Date(msg.createdAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            isSystem: msg.sender.role === "system",
+          },
+        ],
+      }));
     });
 
     socket.on("chatEnded", ({ chatId }) => {
       console.log("Chat ended:", chatId);
-      setActiveRoom(null);
+      setChatHistories((prev) => ({
+        ...prev,
+        "Random Room": [
+          ...(prev["Random Room"] || []),
+          { id: Date.now(), text: "Chat ended.", isSystem: true },
+        ],
+      }));
       setChatId(null);
       setIsWaiting(false);
     });
@@ -63,18 +139,37 @@ export default function Chat() {
     return () => {
       socket.off("chatStarted");
       socket.off("waiting");
+      socket.off("systemMessage");
       socket.off("newMessage");
       socket.off("chatEnded");
     };
-
   }, [activeRoom]);
 
   // ==== start random chat ====
-  const startRandomChat = async (userId) => {
+  const startRandomChat = async () => {
     const username = localStorage.getItem("username");
-    if (!username) return;
-    socket.emit("randomChat", { userId: username });
+    const role = localStorage.getItem("role") || "guest";
+    const refId = localStorage.getItem("refId");
+
+    if (!username || !refId) {
+      console.error("Missing username or refId for random chat");
+      return;
+    }
+
+    // clear history when new chat requested
+    setChatHistories({});
+
+    socket.emit("randomChat", { username, role, refId });
     setHasRandomChat(true);
+  };
+
+  // === Leave chat ===
+  const leaveChat = () => {
+    if (chatId) {
+      socket.emit("leaveChat", { chatId });
+      setChatId(null);
+      setChatHistories({}); // clear chat when leaving
+    }
   };
 
   // === send message ===
@@ -82,23 +177,15 @@ export default function Chat() {
     e.preventDefault();
     if (!input.trim() || !chatId) return;
 
+    const role = localStorage.getItem("role") || "guest";
+    const refId = localStorage.getItem("refId");
+    const username = localStorage.getItem("username");
+
     socket.emit("sendMessage", {
       chatId,
-      sender: "guest",
+      sender: { role, refId, username },
       content: input,
     });
-
-    setChatHistories((prev) => ({
-      ...prev,
-      [activeRoom]: [...(prev[activeRoom] || []), {
-        id: Date.now(),
-        sender: "me",
-        text: input,
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit", minute: '2-digit'
-        })
-      }]
-    }));
 
     setInput("");
   };
@@ -109,7 +196,7 @@ export default function Chat() {
         {/* Desktop layout */}
         <aside className="hidden md:block w-80">
           <SidebarContent
-            friends={friends}
+            friends={[]}
             activeRoom={activeRoom}
             setActiveRoom={setActiveRoom}
             hasRandomChat={hasRandomChat}
@@ -128,7 +215,8 @@ export default function Chat() {
               input={input}
               setInput={setInput}
               sendMessage={sendMessage}
-              startRandomChat={startRandomChat} // optional if needed inside ChatScreen
+              startRandomChat={startRandomChat}
+              leaveChat={leaveChat}
               isWaiting={isWaiting}
             />
           ) : (
@@ -143,7 +231,7 @@ export default function Chat() {
           {!activeRoom ? (
             <div className="w-full">
               <SidebarContent
-                friends={friends}
+                friends={[]}
                 activeRoom={activeRoom}
                 setActiveRoom={setActiveRoom}
                 hasRandomChat={hasRandomChat}
@@ -160,7 +248,8 @@ export default function Chat() {
               input={input}
               setInput={setInput}
               sendMessage={sendMessage}
-              startRandomChat={startRandomChat} // optional if needed inside ChatScreen
+              startRandomChat={startRandomChat}
+              leaveChat={leaveChat}
               isWaiting={isWaiting}
             />
           )}

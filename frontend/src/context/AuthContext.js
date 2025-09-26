@@ -29,7 +29,12 @@ export const AuthProvider = ({ children }) => {
         const response = await guestLogin(username);
         setUser({ token: response.token, role: "guest", username: response.username });
         setHasRandomChat(true);
+        
+        localStorage.setItem("token", response.token);
+        localStorage.setItem("role", "guest");
+        localStorage.setItem("username", response.username);
         localStorage.setItem("hasRandomChat", "true");
+
         return response;
     };
 
@@ -42,6 +47,10 @@ export const AuthProvider = ({ children }) => {
     const login = async (data) => {
         const response = await loginUser(data);
         setUser({ token: response.token, role: "user", username: response.username });
+
+        localStorage.setItem("token", response.token);
+        localStorage.setItem("role", "user");
+        localStorage.setItem("username", response.username);
 
         // if they already had Random Chat, keep it
         if (localStorage.getItem("hasRandomChat") === "true") {
@@ -57,7 +66,10 @@ export const AuthProvider = ({ children }) => {
         await logoutApi();
         setUser(null);
         setHasRandomChat(false);
-        localStorage.removeItem(hasRandomChat);
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+        localStorage.removeItem("username");
+        localStorage.removeItem("hasRandomChat");
     };
 
     return(

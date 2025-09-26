@@ -11,6 +11,8 @@ export const guestLogin = async (username) => {
     localStorage.setItem("token", data.token);
     localStorage.setItem("role", "guest");
     localStorage.setItem("username", data.username);
+    localStorage.setItem("refId", data.sessionId);
+    
     return data;
 };
 

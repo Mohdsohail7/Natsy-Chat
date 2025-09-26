@@ -6,19 +6,35 @@ module.exports = (io) => {
     console.log("New User Connected.", socket.id);
 
     // Random chat
-    socket.on("randomChat", async ({ userId }) => {
+    socket.on("randomChat", async ({ role, refId, username }) => {
       try {
+        // Check if someone is waiting
         let waiting = await ChatSession.findOne({ status: "waiting" });
         if (waiting) {
-          waiting.participants.push(userId);
+          // join waiting session
+          waiting.participants.push({ role, refId, username });
           waiting.status = "active";
           await waiting.save();
 
+          // Ensure both users join same room
           socket.join(waiting._id.toString());
-          io.to(waiting._id.toString()).emit("chatStarted", { chatId: waiting._id });
+          // const otherSocket = [...(await io.in(waiting._id.toString()).allSockets())];
+          // console.log("[SOCKET] Users in room:", otherSocket);
+
+          // Notify both users that chat started
+          io.to(waiting._id.toString()).emit("chatStarted", {
+            chatId: waiting._id,
+          });
+
+          // Send a system message to both users
+          io.to(waiting._id.toString()).emit("systemMessage", {
+            text: "You are now connected with a stranger!",
+            chatId: waiting._id,
+          });
         } else {
+          // No one waiting, create new session
           const newSession = await ChatSession.create({
-            participants: [userId],
+            participants: [{ role, refId, username }],
             status: "waiting",
           });
 
@@ -35,8 +51,14 @@ module.exports = (io) => {
     socket.on("sendMessage", async ({ chatId, sender, content }) => {
       try {
         const msg = await Message.create({ chatId, sender, content });
-        io.to(chatId).emit("newMessage", msg);
+        io.to(chatId).emit("newMessage", {
+          _id: msg._id,
+          sender,
+          content,
+          createdAt: msg.createdAt,
+        });
       } catch (error) {
+        console.error("[SOCKET] sendMessage error:", error);
         socket.emit("error", { message: "Error sending message" });
       }
     });

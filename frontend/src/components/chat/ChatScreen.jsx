@@ -12,32 +12,10 @@ export default function ChatScreen({
   setInput,
   sendMessage, // function from parent
   isWaiting,
-  startRandomChat
+  startRandomChat,
+  leaveChat,
 }) {
   const messages = chatHistories[activeRoom] || [];
-
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    const newMessage = {
-      id: Date.now(),
-      sender: "me",
-      text: input,
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-
-    // Update chatHistories in parent
-    setChatHistories((prev) => ({
-      ...prev,
-      [activeRoom]: [...(prev[activeRoom] || []), newMessage],
-    }));
-
-    setInput("");
-  };
 
   const handleAudioCall = () => {
     console.log("Audio call started with:", activeRoom);
@@ -62,27 +40,30 @@ export default function ChatScreen({
 
         {/* Call buttons */}
         <div className="ml-auto">
-          <CallButtons onAudioCall={handleAudioCall} onVideoCall={handleVideoCall} />
+          <CallButtons
+            onAudioCall={handleAudioCall}
+            onVideoCall={handleVideoCall}
+          />
         </div>
       </div>
 
       {/* Messages */}
       <div className="flex-1 p-4 overflow-y-auto space-y-3">
         {isWaiting ? (
-    <div className="text-gray-400 text-center mt-10">
-      Waiting for a random match...
-    </div>
-  ) : (
-    messages.map((msg) => (
-      <MessageBubble
-        key={msg.id}
-        sender={msg.sender}
-        text={msg.text}
-        timestamp={msg.timestamp || "00:00"}
-      />
-    ))
-  )}
-
+          <div className="text-gray-400 text-center mt-10">
+            Waiting for a random match...
+          </div>
+        ) : (
+          messages.map((msg) => (
+            <MessageBubble
+              key={msg.id}
+              sender={msg.sender}
+              text={msg.text}
+              timestamp={msg.timestamp || "00:00"}
+              isSystem={msg.isSystem}
+            />
+          ))
+        )}
       </div>
 
       {/* Action buttons only visible for "Random Room" */}
@@ -90,9 +71,9 @@ export default function ChatScreen({
         <div className="px-4 py-2 bg-gray-900 border-t border-gray-800 flex items-center space-x-3">
           <button
             onClick={() => {
+              leaveChat();
+              setChatHistories({});
               startRandomChat();
-              setChatHistories((prev) => ({ ...prev, "Random Room": [] }));
-              setActiveRoom("Random Room");
             }}
             className="bg-indigo-500 hover:bg-indigo-400 px-5 py-2 rounded-full font-semibold"
           >
@@ -100,7 +81,9 @@ export default function ChatScreen({
           </button>
           <button
             onClick={() => {
-              setActiveRoom(null);
+              leaveChat();
+              setChatHistories({});
+              setActiveRoom("Random Room");
             }}
             className="bg-indigo-500 hover:bg-indigo-400 px-5 py-2 rounded-full font-semibold"
           >
@@ -111,7 +94,7 @@ export default function ChatScreen({
 
       {/* Input box */}
       <form
-        onSubmit={handleSendMessage}
+        onSubmit={sendMessage}
         className="p-4 bg-gray-900 flex items-center space-x-3 border-t border-gray-800 sticky bottom-0"
       >
         <input

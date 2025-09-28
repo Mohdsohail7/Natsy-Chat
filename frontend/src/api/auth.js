@@ -1,8 +1,4 @@
-import axios from "axios";
-
-const axiosInstance = axios.create({
-    baseURL: process.env.REACT_APP_BACKEND_URL || "http://localhost:4000/api/v1",
-});
+import {axiosInstance} from "./apiConnector";
 
 // Guest login
 export const guestLogin = async (username) => {
@@ -33,6 +29,20 @@ export const loginUser = async ({ username, password }) => {
     localStorage.setItem("role", "user");
     localStorage.setItem("username", data.username);
     return data;
+};
+
+// Email Verification
+export const verifyEmail = async (token) => {
+  const { data } = await axiosInstance.get(`/auth/verify/${token}`, {
+    params: { redirect: false },
+  });
+  return data;
+};
+
+// Resend verification email
+export const resendVerification = async (email) => {
+  const { data } = await axiosInstance.post("/auth/resend-verification", { email });
+  return data;
 };
 
 // Logout

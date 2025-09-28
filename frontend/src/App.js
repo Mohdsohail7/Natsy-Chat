@@ -7,6 +7,8 @@ import { Toaster } from 'react-hot-toast';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Chat from './pages/Chat';
+import EmailVerified from './pages/EmailVerified';
+import ResendVerification from './pages/ResendVerification';
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -61,6 +63,11 @@ function App() {
         {/* Other pages will come later */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+        {/* Email verification routes */}
+        <Route path="/email-verified/:token" element={<EmailVerified />} />
+        <Route path="/resend-verification" element={<ResendVerification />} />
+
         <Route path="/chat" element={<Chat />} />
       </Routes>
     </Router>

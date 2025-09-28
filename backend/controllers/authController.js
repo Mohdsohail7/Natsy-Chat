@@ -6,6 +6,8 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
+const mailSender = require("../utils/mailSender");
+const { verificationEmail } = require("../mailTemplate/emailVerification");
 
 // Generate JWT Registered user token
 const signUserToken = (id) => {
@@ -114,9 +116,10 @@ exports.registerUser = async (req, res) => {
       const userExist = await User.findOne({ username: usernameProvided.trim() });
       if (userExist) return res.status(400).json({ message: "Username already taken." });
       finalUsername = usernameProvided.trim();
-    } else {
-      finalUsername = undefined;
-    }
+    } 
+    // else {
+    //   finalUsername = undefined;
+    // }
 
         // hash password
         const salt = await bcrypt.genSalt(10);
@@ -161,10 +164,16 @@ exports.registerUser = async (req, res) => {
           );
         }
 
-        // Return verification link (later send email via nodemailer)
+        // Return verification link (send email via nodemailer)
+        const verificationLink = `${process.env.BACKEND_URL}/api/auth/verify/${verificationToken}`;
+        await mailSender(
+            user.email,
+            "Verify your Nastychat account",
+            verificationEmail(user.username, verificationLink)
+        );
+
         return res.status(201).json({
             message: "Registered. Please verify your email to enable permanent login.",
-            verificationLink: `http://localhost:5000/api/auth/verify/${verificationToken}`,
         });
 
     } catch (error) {
@@ -190,10 +199,46 @@ exports.verifyEmail = async (req, res) => {
         user.verificationToken = undefined;
         await user.save();
 
+        if (req.query.redirect === "true") {
+            // Redirect to frontend (success page)
+            return res.redirect(`${process.env.FRONTEND_URL}/email-verified`);
+        }
+
         return res.status(200).json({ message: "Email verified successfully!."});
     } catch (error) {
         console.error("Email verification failed.", error);
         return res.status(500).json({ message: "Something went wrong. Please try again email verification."});
+    }
+}
+
+// Resend verification email
+exports.resendVerification = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email){
+            return res.status(400).json({ message: "Email is required."});
+        }
+
+        const user = await User.findOne({ email: email.toLowerCase()});
+        if (!user) return res.status(404).json({ message: "User not found."});
+        if (user.isVerified) return res.status(400).json({ message: "Account already verified."});
+
+        // generate new token
+        const newToken = crypto.randomBytes(32).toString("hex");
+        user.verificationToken = newToken;
+        await user.save();
+
+        const verificationLink = `${process.env.BACKEND_URL}/api/auth/verify/${newToken}`;
+        await mailSender(
+            user.email,
+            "Resend: Verify your Nastychat account",
+            verificationEmail(user.username, verificationLink)
+        );
+
+        return res.json({ message: "Verification email resent. Please check your inbox." });
+    } catch (error) {
+        console.error("Resend verification failed:", error);
+        return res.status(500).json({ message: "Failed to resend verification email."});
     }
 }
 

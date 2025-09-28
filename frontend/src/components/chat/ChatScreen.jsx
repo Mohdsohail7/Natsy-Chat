@@ -1,5 +1,5 @@
 import React from "react";
-import { FiArrowLeft } from "react-icons/fi";
+import { FiArrowLeft, FiUserPlus } from "react-icons/fi";
 import MessageBubble from "./MessageBubble";
 import CallButtons from "./CallButtons";
 
@@ -25,6 +25,11 @@ export default function ChatScreen({
     console.log("Video call started with:", activeRoom);
   };
 
+  // Friend request handler
+  const handleFriendRequest = () => {
+    console.log("Friend request sent.");
+  };
+
   return (
     <div className="flex-1 flex flex-col h-screen">
       {/* Responsive header for both mobile & desktop */}
@@ -39,7 +44,15 @@ export default function ChatScreen({
         <h2 className="text-lg font-semibold">{activeRoom}</h2>
 
         {/* Call buttons */}
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center space-x-3">
+          <button
+            onClick={handleFriendRequest}
+            className="p-2 rounded-full bg-gray-800 hover:bg-gray-700 transition"
+            title="Send Friend Request"
+          >
+            <FiUserPlus size={20} />
+          </button>
+
           <CallButtons
             onAudioCall={handleAudioCall}
             onVideoCall={handleVideoCall}

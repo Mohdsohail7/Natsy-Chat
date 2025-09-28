@@ -26,6 +26,12 @@ router.post("/login", authControllers.loginUser);
 router.get("/verify/:token", authControllers.verifyEmail)
 
 // ===============================
+//  RESEND VERIFICATION EMAIL
+// ===============================
+router.post("/resend-verification", authControllers.resendVerification);
+
+
+// ===============================
 //  LOGOUT (USER & GUEST)
 // ===============================
 router.post("/logout", authMiddleware, authControllers.logout);

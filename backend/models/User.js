@@ -39,6 +39,7 @@ const userSchema = new mongoose.Schema({
     verificationToken: {
         type: String // random string for verification link
     },
+    friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 },
 {
     timestamps: true

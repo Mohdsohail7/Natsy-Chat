@@ -1,7 +1,10 @@
 import React from "react";
 import { FiArrowLeft, FiUserPlus } from "react-icons/fi";
+import toast from "react-hot-toast";
 import MessageBubble from "./MessageBubble";
 import CallButtons from "./CallButtons";
+import { sendFriendRequest } from "../../api/friends";
+import { useAuth } from "../../context/AuthContext";
 
 export default function ChatScreen({
   activeRoom, // renamed from 'room'
@@ -16,6 +19,7 @@ export default function ChatScreen({
   leaveChat,
 }) {
   const messages = chatHistories[activeRoom] || [];
+  const { user } = useAuth();
 
   const handleAudioCall = () => {
     console.log("Audio call started with:", activeRoom);
@@ -26,8 +30,22 @@ export default function ChatScreen({
   };
 
   // Friend request handler
-  const handleFriendRequest = () => {
-    console.log("Friend request sent.");
+  const handleFriendRequest = async () => {
+    if (!user || user.role === "guest") {
+      // guest accounts can't send request redirect
+      window.location.href = "/register";
+      return;
+    }
+
+    try {
+      // assuming the activeRoom name is the receover's username/id
+      const receiverId = activeRoom;
+      const res = await sendFriendRequest(receiverId);
+      toast.success(res.message || "Friend request sent!");
+    } catch (error) {
+      console.error("Error sending friend request:", error.res?.data || error.message);
+      toast.error(error.res?.data?.message || "Failed to send request.");
+    }
   };
 
   return (

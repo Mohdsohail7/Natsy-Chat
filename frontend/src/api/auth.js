@@ -3,12 +3,6 @@ import {axiosInstance} from "./apiConnector";
 // Guest login
 export const guestLogin = async (username) => {
     const { data } = await axiosInstance.post("/auth/guest-login", { username });
-    // save to localstorage
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("role", "guest");
-    localStorage.setItem("username", data.username);
-    localStorage.setItem("refId", data.sessionId);
-    
     return data;
 };
 
@@ -25,9 +19,6 @@ export const registerUser = async ({ username, email, password }) => {
 // User login
 export const loginUser = async ({ username, password }) => {
     const { data } = await axiosInstance.post("/auth/login", { username, password });
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("role", "user");
-    localStorage.setItem("username", data.username);
     return data;
 };
 

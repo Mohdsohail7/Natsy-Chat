@@ -33,6 +33,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem("token", response.token);
         localStorage.setItem("role", "guest");
         localStorage.setItem("username", response.username);
+        localStorage.setItem("refId", response.sessionId);
         localStorage.setItem("hasRandomChat", "true");
 
         return response;

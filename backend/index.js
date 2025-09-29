@@ -34,10 +34,12 @@ app.use(express.json());
 // Routes
 const authRoutes = require("./routes/authRoutes");
 const chatRoutes = require("./routes/chatRoutes");
+const friendRequestRoutes = require("./routes/friendRoutes");
 
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/chat", chatRoutes);
+app.use("/api/v1/friend", friendRequestRoutes);
 
 // sockets
 chatSocket(io)

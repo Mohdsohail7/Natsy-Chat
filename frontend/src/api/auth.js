@@ -7,11 +7,11 @@ export const guestLogin = async (username) => {
 };
 
 // User register
-export const registerUser = async ({ username, email, password }) => {
+export const registerUser = async ({ email, password, guestSessionId }) => {
     const { data } = await axiosInstance.post("/auth/register", {
-        username,
         email,
         password,
+        guestSessionId 
     });
     return data // verification link will come here
 };

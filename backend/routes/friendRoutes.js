@@ -8,4 +8,9 @@ const router = express.Router();
 // =============================================
 router.post("/send-request", authMiddleware, friendRequestController.sendFriendRequest);
 
+// =============================================
+// requests accept / reject 
+// =============================================
+router.post("/send-response", authMiddleware, friendRequestController.responseFriendRequest);
+
 module.exports = router;

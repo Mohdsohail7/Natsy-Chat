@@ -41,7 +41,8 @@ export const AuthProvider = ({ children }) => {
 
     // Register user
     const register = async (data) => {
-        return await registerUser(data);
+        const guestSessionId = localStorage.getItem("refId");
+        return await registerUser({...data, guestSessionId});
     };
 
     // User login

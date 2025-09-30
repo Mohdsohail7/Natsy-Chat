@@ -18,9 +18,9 @@ export default function ResendVerification() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white shadow-md rounded-lg p-8 max-w-md w-full text-center">
-        <h1 className="text-xl font-bold mb-4">Resend Verification Email</h1>
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-950 via-gray-900 to-slate-950">
+      <div className="bg-gradient-to-r from-blue-950 via-gray-900 to-slate-950 shadow-md rounded-lg p-8 max-w-md w-full text-center">
+        <h1 className="text-xl font-bold mb-4 text-gray-100">Resend Verification Email</h1>
 
         {status === "success" ? (
           <p className="text-green-600">
@@ -34,7 +34,8 @@ export default function ResendVerification() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="border rounded w-full px-3 py-2 mb-4"
+              className="border rounded w-full px-3 py-2 mb-4 bg-gradient-to-r from-blue-950 via-gray-900 to-slate-950
+              text-white focus:outline-none focus:ring-2 focus:ring-gray-600"
             />
             <button
               type="submit"

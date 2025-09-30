@@ -5,7 +5,6 @@ const userSchema = new mongoose.Schema({
         type: String,
         minlength: 3,
         maxlength: 20,
-        required: true,
         unique: true,
         sparse: true,
     },

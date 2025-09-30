@@ -1,13 +1,13 @@
-const ChatSession = require("../models/ChatSession");
-const GuestSession = require("../models/GuestSession");
-const Message = require("../models/Message");
-const User = require("../models/User");
-
+const validator = require("validator");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const mailSender = require("../utils/mailSender");
 const { verificationEmail } = require("../mailTemplate/emailVerification");
+const ChatSession = require("../models/ChatSession");
+const GuestSession = require("../models/GuestSession");
+const Message = require("../models/Message");
+const User = require("../models/User");
 
 // Generate JWT Registered user token
 const signUserToken = (id) => {
@@ -165,7 +165,7 @@ exports.registerUser = async (req, res) => {
         }
 
         // Return verification link (send email via nodemailer)
-        const verificationLink = `${process.env.BACKEND_URL}/api/auth/verify/${verificationToken}`;
+        const verificationLink = `${process.env.FRONTEND_URL}/email-verified/${verificationToken}`;
         await mailSender(
             user.email,
             "Verify your Nastychat account",
@@ -228,7 +228,7 @@ exports.resendVerification = async (req, res) => {
         user.verificationToken = newToken;
         await user.save();
 
-        const verificationLink = `${process.env.BACKEND_URL}/api/auth/verify/${newToken}`;
+        const verificationLink = `${process.env.FRONTEND_URL}/email-verified/${newToken}`;
         await mailSender(
             user.email,
             "Resend: Verify your Nastychat account",

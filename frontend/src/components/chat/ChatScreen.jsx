@@ -3,7 +3,7 @@ import { FiArrowLeft, FiUserPlus } from "react-icons/fi";
 import toast from "react-hot-toast";
 import MessageBubble from "./MessageBubble";
 import CallButtons from "./CallButtons";
-import { sendFriendRequest } from "../../api/friends";
+import { responseFriendRequest, sendFriendRequest } from "../../api/friends";
 import { useAuth } from "../../context/AuthContext";
 
 export default function ChatScreen({
@@ -17,6 +17,7 @@ export default function ChatScreen({
   isWaiting,
   startRandomChat,
   leaveChat,
+  pendingRequestId
 }) {
   const messages = chatHistories[activeRoom] || [];
   const { user } = useAuth();
@@ -47,6 +48,17 @@ export default function ChatScreen({
       toast.error(error.res?.data?.message || "Failed to send request.");
     }
   };
+
+  // Respond handlers (receiver)
+  const handleFriendRequestRespond = async (action) => {
+    try {
+      const res = await responseFriendRequest(pendingRequestId, action);
+      toast.success(res.message || `Friend request ${action}ed!.`);
+    } catch (error) {
+      console.error(`${action} error:`, error.res?.data || error.message)
+      toast.error(error.res?.data?.message || `Failed to ${action} request.`);
+    }
+  }
 
   return (
     <div className="flex-1 flex flex-col h-screen">
@@ -119,6 +131,24 @@ export default function ChatScreen({
             className="bg-indigo-500 hover:bg-indigo-400 px-5 py-2 rounded-full font-semibold"
           >
             End Chat
+          </button>
+        </div>
+      )}
+
+      {/* If a friend request is pending for THIS user */}
+      {pendingRequestId && (
+        <div className="px-4 py-2 bg-gray-800 border-t border-gray-700 flex items-center justify-center space-x-4">
+          <button
+            onClick={() => handleFriendRequestRespond("accept")}
+            className="bg-green-500 hover:bg-green-400 px-5 py-2 rounded-full font-semibold"
+          >
+            Accept
+          </button>
+          <button
+            onClick={() => handleFriendRequestRespond("reject")}
+            className="bg-red-500 hover:bg-red-400 px-5 py-2 rounded-full font-semibold"
+          >
+            Reject
           </button>
         </div>
       )}

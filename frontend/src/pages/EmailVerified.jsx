@@ -9,13 +9,21 @@ export default function EmailVerified() {
 
   useEffect(() => {
     const handleVerifyEmail = async () => {
-        try {
-            await verifyEmail(token);
-            setStatus("Success");
-        } catch (error) {
-            setStatus("error");
-        }
-    }
+      if (!token) {
+        setStatus("error");
+        return;
+      }
+      try {
+        await verifyEmail(token);
+        setStatus("success");
+      } catch (error) {
+        console.error(
+          "Verification API Error:",
+          error.response?.data?.message || error.message
+        );
+        setStatus("error");
+      }
+    };
 
     handleVerifyEmail();
   }, [token]);

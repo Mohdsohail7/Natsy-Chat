@@ -5,22 +5,32 @@ import { resendVerification } from "../api/auth";
 export default function ResendVerification() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleResendEmail = async (e) => {
     e.preventDefault();
     setStatus("loading");
+    setErrorMsg("");
+
     try {
       await resendVerification(email);
       setStatus("success");
     } catch (err) {
       setStatus("error");
+      if (err.response && err.response.data && err.response.data.message) {
+        setErrorMsg(err.response.data.message);
+      } else {
+        setErrorMsg("Failed to resend verification email. Please try again.");
+      }
     }
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-950 via-gray-900 to-slate-950">
       <div className="bg-gradient-to-r from-blue-950 via-gray-900 to-slate-950 shadow-md rounded-lg p-8 max-w-md w-full text-center">
-        <h1 className="text-xl font-bold mb-4 text-gray-100">Resend Verification Email</h1>
+        <h1 className="text-xl font-bold mb-4 text-gray-100">
+          Resend Verification Email
+        </h1>
 
         {status === "success" ? (
           <p className="text-green-600">
@@ -47,11 +57,7 @@ export default function ResendVerification() {
           </form>
         )}
 
-        {status === "error" && (
-          <p className="text-red-600 mt-4">
-            Failed to resend verification email. Please try again.
-          </p>
-        )}
+        {status === "error" && <p className="text-red-600 mt-4">{errorMsg}</p>}
       </div>
     </div>
   );

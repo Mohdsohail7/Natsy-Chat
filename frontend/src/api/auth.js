@@ -24,9 +24,7 @@ export const loginUser = async ({ username, password }) => {
 
 // Email Verification
 export const verifyEmail = async (token) => {
-  const { data } = await axiosInstance.get(`/auth/verify/${token}`, {
-    params: { redirect: false },
-  });
+  const { data } = await axiosInstance.get(`/auth/verify/${token}`);
   return data;
 };
 

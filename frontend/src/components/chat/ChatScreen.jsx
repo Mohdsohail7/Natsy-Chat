@@ -5,6 +5,7 @@ import MessageBubble from "./MessageBubble";
 import CallButtons from "./CallButtons";
 import { responseFriendRequest, sendFriendRequest } from "../../api/friends";
 import { useAuth } from "../../context/AuthContext";
+import socket from "../../api/socket";
 
 export default function ChatScreen({
   activeRoom, // renamed from 'room'
@@ -17,10 +18,19 @@ export default function ChatScreen({
   isWaiting,
   startRandomChat,
   leaveChat,
-  pendingRequestId
+  pendingRequestId,
+  opponent,
+  hasRandomChat,
 }) {
   const messages = chatHistories[activeRoom] || [];
   const { user } = useAuth();
+  // if we’re chatting in the random room or with a temporary match
+  const displayName =
+    hasRandomChat || opponent?.role === "guest"
+      ? "Anonymous"
+      : opponent?.username || activeRoom;
+
+  const showActionButtons = hasRandomChat && !isWaiting;
 
   const handleAudioCall = () => {
     console.log("Audio call started with:", activeRoom);
@@ -34,17 +44,48 @@ export default function ChatScreen({
   const handleFriendRequest = async () => {
     if (!user || user.role === "guest") {
       // guest accounts can't send request redirect
+      toast.error("Please register or login to send friend requests.");
       window.location.href = "/register";
+      return;
+    }
+
+    if (!opponent || !opponent.username) {
+      toast.error("Cannot send friend request: opponent not found.");
       return;
     }
 
     try {
       // assuming the activeRoom name is the receover's username/id
-      const receiverId = activeRoom;
-      const res = await sendFriendRequest(receiverId);
+      const receiverUsername = opponent.username;
+      const res = await sendFriendRequest(receiverUsername);
       toast.success(res.message || "Friend request sent!");
+
+      // system message for sender
+      const newMessage = {
+        id: Date.now(),
+        sender: "system",
+        text: `Friend request sent to ${receiverUsername}`,
+        isSystem: true,
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+      setChatHistories((prev) => ({
+        ...prev,
+        [receiverUsername]: [...(prev[receiverUsername] || []), newMessage],
+      }));
+
+      // Notify receiver via socket
+      socket.emit("friendRequest", {
+        from: user.username,
+        to: receiverUsername,
+      });
     } catch (error) {
-      console.error("Error sending friend request:", error.res?.data || error.message);
+      console.error(
+        "Error sending friend request:",
+        error.res?.data || error.message
+      );
       toast.error(error.res?.data?.message || "Failed to send request.");
     }
   };
@@ -53,12 +94,36 @@ export default function ChatScreen({
   const handleFriendRequestRespond = async (action) => {
     try {
       const res = await responseFriendRequest(pendingRequestId, action);
-      toast.success(res.message || `Friend request ${action}ed!.`);
+      toast.success(res.message || `Friend request ${action}ed!`);
+
+      if (action === "accept") {
+        // Notify the sender via socket
+        socket.emit("friendRequestAccepted", {
+          from: user.username, // receiver
+          to: pendingRequestId, // sender username or ID
+        });
+
+        // Add system message for receiver
+        const newMessage = {
+          id: Date.now(),
+          sender: "system",
+          text: `You and ${pendingRequestId} are now friends`,
+          isSystem: true,
+          timestamp: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        };
+        setChatHistories((prev) => ({
+          ...prev,
+          [pendingRequestId]: [...(prev[pendingRequestId] || []), newMessage],
+        }));
+      }
     } catch (error) {
-      console.error(`${action} error:`, error.res?.data || error.message)
+      console.error(`${action} error:`, error.res?.data || error.message);
       toast.error(error.res?.data?.message || `Failed to ${action} request.`);
     }
-  }
+  };
 
   return (
     <div className="flex-1 flex flex-col h-screen">
@@ -71,7 +136,7 @@ export default function ChatScreen({
         >
           <FiArrowLeft size={20} />
         </button>
-        <h2 className="text-lg font-semibold">{activeRoom}</h2>
+        <h2 className="text-lg font-semibold">{displayName}</h2>
 
         {/* Call buttons */}
         <div className="ml-auto flex items-center space-x-3">
@@ -110,7 +175,7 @@ export default function ChatScreen({
       </div>
 
       {/* Action buttons only visible for "Random Room" */}
-      {activeRoom === "Random Room" && (
+      {showActionButtons && (
         <div className="px-4 py-2 bg-gray-900 border-t border-gray-800 flex items-center space-x-3">
           <button
             onClick={() => {

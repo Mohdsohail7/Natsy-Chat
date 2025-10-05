@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { guestLogin, loginUser, registerUser, logout as logoutApi } from "../api/auth";
+import { setAuthToken } from "../api/apiConnector";
 
 
 
@@ -20,6 +21,7 @@ export const AuthProvider = ({ children }) => {
         if (token && role && username) {
             setUser({ token, role, username });
             setHasRandomChat(random === "true"); // restore previous randomChat state
+            setAuthToken(token)
         }
         setLoading(false);
     }, []);
@@ -36,6 +38,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem("refId", response.sessionId);
         localStorage.setItem("hasRandomChat", "true");
 
+        setAuthToken(response.token);
         return response;
     };
 
@@ -60,6 +63,7 @@ export const AuthProvider = ({ children }) => {
         } else {
             setHasRandomChat(false);
         }
+        setAuthToken(response.token)
         return response;
     };
 
@@ -72,6 +76,8 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem("role");
         localStorage.removeItem("username");
         localStorage.removeItem("hasRandomChat");
+
+        setAuthToken(null);
     };
 
     return(

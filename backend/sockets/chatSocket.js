@@ -1,9 +1,17 @@
 const ChatSession = require("../models/ChatSession");
 const Message = require("../models/Message");
 
+const onlineUsers = new Map();
+
 module.exports = (io) => {
   io.on("connection", (socket) => {
     console.log("New User Connected.", socket.id);
+
+    // Register user
+    socket.on("registerUser", (userId) => {
+      onlineUsers.set(userId, socket);
+      console.log(`User ${userId} registered.`);
+    });
 
     // Random chat
     socket.on("randomChat", async ({ role, refId, username }) => {
@@ -12,19 +20,30 @@ module.exports = (io) => {
         let waiting = await ChatSession.findOne({ status: "waiting" });
         if (waiting) {
           // join waiting session
+          const opponent = waiting.participants[0];
           waiting.participants.push({ role, refId, username });
           waiting.status = "active";
           await waiting.save();
 
           // Ensure both users join same room
           socket.join(waiting._id.toString());
-          // const otherSocket = [...(await io.in(waiting._id.toString()).allSockets())];
-          // console.log("[SOCKET] Users in room:", otherSocket);
+          // Find the socket of the opponent (first user)
+          const opponentSocket = [
+            ...(await io.in(waiting._id.toString()).allSockets()),
+          ].find((id) => id !== socket.id);
 
           // Notify both users that chat started
           io.to(waiting._id.toString()).emit("chatStarted", {
             chatId: waiting._id,
+            opponent: opponent,
           });
+
+          if (opponentSocket) {
+            io.to(opponentSocket).emit("chatStarted", {
+              chatId: waiting._id,
+              opponent: { role, refId, username }, // opponent for old user
+            });
+          }
 
           // Send a system message to both users
           io.to(waiting._id.toString()).emit("systemMessage", {
@@ -63,6 +82,28 @@ module.exports = (io) => {
       }
     });
 
+    // when user send friend request
+    socket.on("friendRequest", ({ from, to }) => {
+      const targetSocket = onlineUsers.get(to);
+      if (targetSocket) {
+        targetSocket.emit("friendRequestReceived", { from });
+      } else {
+        console.log(`User ${to} is not online.`);
+      }
+    });
+
+    // When receiver accepts a friend request
+    socket.on("friendRequestAccepted", ({ from, to }) => {
+      const senderSocket = onlineUsers.get(to); // the original sender
+      const receiverSocket = onlineUsers.get(from);
+      if (senderSocket) {
+        senderSocket.emit("friendRequestAcceptedNotification", { from });
+      }
+      if (receiverSocket) {
+        receiverSocket.emit("friendRequestAcceptedNotification", { from: to });
+      }
+    });
+
     // Leave chat
     socket.on("leaveChat", async ({ chatId }) => {
       await ChatSession.findByIdAndUpdate(chatId, { status: "ended" });
@@ -72,6 +113,12 @@ module.exports = (io) => {
     // Disconnect
     socket.on("disconnect", () => {
       console.log("User disconnected.", socket.id);
+      for (const [userId, sock] of onlineUsers.entries()) {
+        if (sock === socket) {
+          onlineUsers.delete(userId);
+          break;
+        }
+      }
     });
   });
 };

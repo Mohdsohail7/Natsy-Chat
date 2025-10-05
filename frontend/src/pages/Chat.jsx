@@ -12,6 +12,8 @@ export default function Chat() {
     localStorage.getItem("role") === "guest"
   );
   const [isWaiting, setIsWaiting] = useState(false);
+  const [opponent, setOpponent] = useState(null);
+  const [pendingRequestId, setPendingRequestId] = useState(null);
 
   // Example friends list (can be fetched from API later)
   // const [friends] = useState([
@@ -39,15 +41,23 @@ export default function Chat() {
 
   // ==== Socket Listeners ===
   useEffect(() => {
-    socket.on("chatStarted", ({ chatId }) => {
+    const userId = localStorage.getItem("refId");
+    const username = localStorage.getItem("username");
+    // Register user with both id and username
+    if (userId || username) {
+      socket.emit("registerUser", { userId, username });
+    }
+
+    socket.on("chatStarted", ({ chatId, opponent }) => {
       console.log("Chat started with ID:", chatId);
 
       localStorage.setItem("chatId", chatId);
 
       setChatId(chatId);
-      setActiveRoom("Random Room");
+      setActiveRoom(opponent.username || "Anonymous");
       setHasRandomChat(true);
       setIsWaiting(false);
+      setOpponent(opponent);
 
       // clear old messages
       setChatHistories({});
@@ -59,6 +69,7 @@ export default function Chat() {
       setActiveRoom("Random Room");
       setHasRandomChat(true);
       setIsWaiting(true);
+      setOpponent(null);
 
       // clear old messages
       setChatHistories({});
@@ -66,10 +77,11 @@ export default function Chat() {
 
     socket.on("systemMessage", (msg) => {
       console.log("System message:", msg);
+      const targetRoom = activeRoom || "Random Room";
       setChatHistories((prev) => ({
         ...prev,
-        "Random Room": [
-          ...(prev["Random Room"] || []),
+        [targetRoom]: [
+          ...(prev[targetRoom] || []),
           { id: Date.now(), text: msg.text, isSystem: true },
         ],
       }));
@@ -79,31 +91,20 @@ export default function Chat() {
       console.log("Received message:", msg);
 
       const myRefId = localStorage.getItem("refId");
-      const myRole = localStorage.getItem("role") || "guest";
+      // const myRole = localStorage.getItem("role") || "guest";
       // const myUsername = localStorage.getItem("username");
 
       const isMe = msg.sender.refId === myRefId;
-      const targetRoom = "Random Room";
+      const targetRoom = opponent?.username || "Random Room";
 
-      let senderDisplay;
+      let senderDisplay = "Anonymous";
 
-      if (msg.sender.role === "system") {
-        senderDisplay = "system";
-      } else if (isMe) {
-        // For my own messages
-        if (myRole === "guest" || msg.sender.role === "guest") {
-          senderDisplay = "me"; // styling ke liye "me"
-        } else {
-          senderDisplay = "me"; // still "me" for alignment
-        }
-      } else {
-        // For other user's messages
-        if (myRole === "guest" || msg.sender.role === "guest") {
-          senderDisplay = "anonymous";
-        } else {
-          senderDisplay = msg.sender.username || "Anonymous";
-        }
-      }
+      if (msg.sender.role === "system") senderDisplay = "system";
+      else if (isMe) senderDisplay = "me";
+      else
+        senderDisplay = hasRandomChat
+          ? "Anonymous"
+          : msg.sender.username || "User";
 
       setChatHistories((prev) => ({
         ...prev,
@@ -123,17 +124,59 @@ export default function Chat() {
       }));
     });
 
-    socket.on("chatEnded", ({ chatId }) => {
-      console.log("Chat ended:", chatId);
+    // friend request
+    socket.on("friendRequestReceived", ({ from }) => {
       setChatHistories((prev) => ({
         ...prev,
-        "Random Room": [
-          ...(prev["Random Room"] || []),
+        [from]: [
+          ...(prev[from] || []),
+          {
+            id: Date.now(),
+            sender: "system",
+            text: `You received a friend request from ${from}`,
+            isSystem: true,
+            timestamp: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          },
+        ],
+      }));
+      setPendingRequestId(from);
+    });
+
+    socket.on("friendRequestAcceptedNotification", ({ from }) => {
+      setChatHistories((prev) => ({
+        ...prev,
+        [from]: [
+          ...(prev[from] || []),
+          {
+            id: Date.now(),
+            sender: "system",
+            text: `You and ${from} are now friends`,
+            isSystem: true,
+            timestamp: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          },
+        ],
+      }));
+    });
+
+    socket.on("chatEnded", ({ chatId }) => {
+      console.log("Chat ended:", chatId);
+      const targetRoom = opponent?.username || "Random Room";
+      setChatHistories((prev) => ({
+        ...prev,
+        [targetRoom]: [
+          ...(prev[targetRoom] || []),
           { id: Date.now(), text: "Chat ended.", isSystem: true },
         ],
       }));
       setChatId(null);
       setIsWaiting(false);
+      setOpponent(null);
     });
 
     return () => {
@@ -141,9 +184,21 @@ export default function Chat() {
       socket.off("waiting");
       socket.off("systemMessage");
       socket.off("newMessage");
+      socket.off("friendRequestReceived");
+      socket.off("friendRequestAcceptedNotification");
       socket.off("chatEnded");
     };
-  }, [activeRoom]);
+  }, [activeRoom, opponent, hasRandomChat]);
+
+  // Role check after mount
+  useEffect(() => {
+    const role = localStorage.getItem("role");
+    if (role === "guest" || role === "user") {
+      setHasRandomChat(true);
+    } else {
+      setHasRandomChat(false);
+    }
+  }, []);
 
   // ==== start random chat ====
   const startRandomChat = async () => {
@@ -167,9 +222,11 @@ export default function Chat() {
   const leaveChat = () => {
     if (chatId) {
       socket.emit("leaveChat", { chatId });
-      setChatId(null);
-      setChatHistories({}); // clear chat when leaving
     }
+    setChatId(null);
+    setChatHistories({}); // clear chat when leaving
+    setOpponent(null);
+    setIsWaiting(false);
   };
 
   // === send message ===
@@ -218,6 +275,9 @@ export default function Chat() {
               startRandomChat={startRandomChat}
               leaveChat={leaveChat}
               isWaiting={isWaiting}
+              opponent={opponent}
+              hasRandomChat={hasRandomChat}
+              pendingRequestId={pendingRequestId}
             />
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-400">
@@ -251,6 +311,9 @@ export default function Chat() {
               startRandomChat={startRandomChat}
               leaveChat={leaveChat}
               isWaiting={isWaiting}
+              opponent={opponent}
+              hasRandomChat={hasRandomChat}
+              pendingRequestId={pendingRequestId}
             />
           )}
         </div>

@@ -9,8 +9,8 @@ const friendRequestSchema = new mongoose.Schema({
     to: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-        required: true
     },
+    toUsername: { type: String, required: true },
     status: {
         type: String,
         enum: ["pending", "accepted", "rejected"],

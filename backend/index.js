@@ -39,7 +39,7 @@ const friendRequestRoutes = require("./routes/friendRoutes");
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/chat", chatRoutes);
-app.use("/api/v1/friend", friendRequestRoutes);
+app.use("/api/v1/friends", friendRequestRoutes);
 
 // sockets
 chatSocket(io)

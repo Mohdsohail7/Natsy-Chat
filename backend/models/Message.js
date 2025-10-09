@@ -25,7 +25,12 @@ const messageSchema = new mongoose.Schema({
     content: {
         type: String,
         required: true
-    }
+    },
+    type: {
+      type: String,
+      enum: ["text", "system", "friendRequest"],
+      default: "text",
+    },
 },
 { timestamps: true }
 );

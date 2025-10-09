@@ -55,7 +55,7 @@ exports.sendFriendRequest = async (req, res) => {
 
 exports.responseFriendRequest = async(req, res) => {
     try {
-        const userId = req.user.id; // logged-in user (receiver)
+        const userId = req.user._id || req.user.id; // logged-in user (receiver)
         const { requestId, action } = req.body // action = "accept" / "reject"
 
         // found sender

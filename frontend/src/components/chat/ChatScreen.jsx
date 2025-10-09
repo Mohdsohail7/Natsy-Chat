@@ -3,7 +3,7 @@ import { FiArrowLeft, FiUserPlus } from "react-icons/fi";
 import toast from "react-hot-toast";
 import MessageBubble from "./MessageBubble";
 import CallButtons from "./CallButtons";
-import { responseFriendRequest, sendFriendRequest } from "../../api/friends";
+import { sendFriendRequest } from "../../api/friends";
 import { useAuth } from "../../context/AuthContext";
 import socket from "../../api/socket";
 
@@ -21,6 +21,7 @@ export default function ChatScreen({
   pendingRequestId,
   opponent,
   hasRandomChat,
+  myAvatar
 }) {
   const messages = chatHistories[activeRoom] || [];
   const { user } = useAuth();
@@ -60,68 +61,21 @@ export default function ChatScreen({
       const res = await sendFriendRequest(receiverUsername);
       toast.success(res.message || "Friend request sent!");
 
-      // system message for sender
-      const newMessage = {
-        id: Date.now(),
-        sender: "system",
-        text: `Friend request sent to ${receiverUsername}`,
-        isSystem: true,
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      };
-      setChatHistories((prev) => ({
-        ...prev,
-        [receiverUsername]: [...(prev[receiverUsername] || []), newMessage],
-      }));
-
       // Notify receiver via socket
-      socket.emit("friendRequest", {
-        from: user.username,
-        to: receiverUsername,
+      socket.emit("sendFriendRequest", {
+        from: user.refId,
+        to: opponent.refId,
+        fromUsername: user.username,
+        fromAvatar: user.avatar || myAvatar,
       });
+
+      
     } catch (error) {
       console.error(
         "Error sending friend request:",
         error.res?.data || error.message
       );
       toast.error(error.res?.data?.message || "Failed to send request.");
-    }
-  };
-
-  // Respond handlers (receiver)
-  const handleFriendRequestRespond = async (action) => {
-    try {
-      const res = await responseFriendRequest(pendingRequestId, action);
-      toast.success(res.message || `Friend request ${action}ed!`);
-
-      if (action === "accept") {
-        // Notify the sender via socket
-        socket.emit("friendRequestAccepted", {
-          from: user.username, // receiver
-          to: pendingRequestId, // sender username or ID
-        });
-
-        // Add system message for receiver
-        const newMessage = {
-          id: Date.now(),
-          sender: "system",
-          text: `You and ${pendingRequestId} are now friends`,
-          isSystem: true,
-          timestamp: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        };
-        setChatHistories((prev) => ({
-          ...prev,
-          [pendingRequestId]: [...(prev[pendingRequestId] || []), newMessage],
-        }));
-      }
-    } catch (error) {
-      console.error(`${action} error:`, error.res?.data || error.message);
-      toast.error(error.res?.data?.message || `Failed to ${action} request.`);
     }
   };
 
@@ -169,6 +123,15 @@ export default function ChatScreen({
               text={msg.text}
               timestamp={msg.timestamp || "00:00"}
               isSystem={msg.isSystem}
+              type={msg.type}
+              from={msg.from}
+              to={msg.to}
+              isSender={msg.isSender}
+              fromUsername={msg.fromUsername}
+              fromAvatar={msg.fromAvatar}
+              user={user}
+              pendingRequestId={pendingRequestId}
+              setChatHistories={setChatHistories}
             />
           ))
         )}
@@ -196,24 +159,6 @@ export default function ChatScreen({
             className="bg-indigo-500 hover:bg-indigo-400 px-5 py-2 rounded-full font-semibold"
           >
             End Chat
-          </button>
-        </div>
-      )}
-
-      {/* If a friend request is pending for THIS user */}
-      {pendingRequestId && (
-        <div className="px-4 py-2 bg-gray-800 border-t border-gray-700 flex items-center justify-center space-x-4">
-          <button
-            onClick={() => handleFriendRequestRespond("accept")}
-            className="bg-green-500 hover:bg-green-400 px-5 py-2 rounded-full font-semibold"
-          >
-            Accept
-          </button>
-          <button
-            onClick={() => handleFriendRequestRespond("reject")}
-            className="bg-red-500 hover:bg-red-400 px-5 py-2 rounded-full font-semibold"
-          >
-            Reject
           </button>
         </div>
       )}

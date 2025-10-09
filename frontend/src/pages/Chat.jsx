@@ -89,11 +89,7 @@ export default function Chat() {
 
     socket.on("newMessage", (msg) => {
       console.log("Received message:", msg);
-
       const myRefId = localStorage.getItem("refId");
-      // const myRole = localStorage.getItem("role") || "guest";
-      // const myUsername = localStorage.getItem("username");
-
       const isMe = msg.sender.refId === myRefId;
       const targetRoom = opponent?.username || "Random Room";
 
@@ -104,7 +100,7 @@ export default function Chat() {
       else
         senderDisplay = hasRandomChat
           ? "Anonymous"
-          : msg.sender.username || "User";
+          : msg.sender.username;
 
       setChatHistories((prev) => ({
         ...prev,
@@ -119,6 +115,12 @@ export default function Chat() {
               minute: "2-digit",
             }),
             isSystem: msg.sender.role === "system",
+            type: msg.type, // <== IMPORTANT
+            from: msg.from,
+            to: msg.to,
+            isSender: isMe,
+            fromUsername: msg.fromUsername,
+            fromAvatar: msg.fromAvatar,
           },
         ],
       }));
